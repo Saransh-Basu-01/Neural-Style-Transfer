@@ -89,4 +89,31 @@ class StyleTransferEngine:
             for layer in self.style_layers:
                 self.style_targets[layer] = gram_matrix(style_features[layer]).clone().detach()
 
+    def run(self, content_tensor, style_tensor, num_steps=300, lr=0.02):
+        if self.content_target is None:
+            raise ValueError("Call prepare_targets() first")
+        
+        content_tensor = content_tensor.to(self.device)
+        generated = content_tensor.clone().detach().requires_grad_(True)
+        optimizer = optim.Adam([generated], lr=lr)
+        
+        for step in range(num_steps):
+            optimizer.zero_grad()
+            
+            features = self._extract_features(generated)
+            
+            content_loss_val = content_loss(self.content_target, features[self.content_layer])
+            style_loss_val = style_loss(self.style_targets, features)
+            
+            total_loss = (self.content_weight * content_loss_val + 
+                         self.style_weight * style_loss_val)
+            
+            total_loss.backward()
+            optimizer.step()
+            
+            with torch.no_grad():
+                generated.clamp_(-2.5, 2.8)
+        
+        return generated.detach()
+
     
