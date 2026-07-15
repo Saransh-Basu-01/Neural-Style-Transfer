@@ -44,7 +44,7 @@ def preprocess_vgg(image, target_size=None):
     
     Args:
         image: PIL Image in RGB mode
-        target_size: (height, width) tuple to resize to (optional)
+        target_size: (width, height) tuple to resize to (optional)
     
     Returns:
         torch.FloatTensor of shape [1, 3, H, W] ready for VGG
