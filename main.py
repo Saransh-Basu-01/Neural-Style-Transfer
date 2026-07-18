@@ -11,6 +11,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 from src.model.vgg import VGG19FeatureExtractor
 from src.model.transfer_engine import StyleTransferEngine
 from src.utils.image_processing import preprocess_vgg, deprocess_vgg, load_image
+import torch.nn.functional as F
+from src.model.losses import gram_matrix
 
 st.set_page_config(page_title="Neural Style Transfer", layout="wide")
 
@@ -89,26 +91,43 @@ if content_file and style_file:
         generated = content_tensor.clone().detach().requires_grad_(True)
         optimizer = torch.optim.Adam([generated], lr=lr)
         history = []
+        history_total = []
+        history_content = []
+        history_style = []
 
+        progress = st.progress(0)
+        chart_total = st.empty()
+        chart_split = st.empty()
         for step in range(num_steps):
             optimizer.zero_grad()
             feats = engine.extractor.extract_features(generated)
-            c_loss = torch.nn.functional.mse_loss(feats[content_layer], engine.content_target)
-            # compute style loss
-            from src.model.losses import gram_matrix
+
+            c_loss = F.mse_loss(feats[content_layer], engine.content_target)
+
             s_loss = 0
             for layer in style_layers:
                 gen_gram = gram_matrix(feats[layer])
-                s_loss += torch.nn.functional.mse_loss(gen_gram, engine.style_targets[layer])
+                s_loss += F.mse_loss(gen_gram, engine.style_targets[layer])
             s_loss = s_loss / len(style_layers)
+
             total = content_weight * c_loss + style_weight * s_loss
             total.backward()
             optimizer.step()
+
             with torch.no_grad():
                 generated.clamp_(-2.5, 2.8)
-            history.append(total.item())
+
+            history_total.append(total.item())
+            history_content.append(c_loss.item())
+            history_style.append(s_loss.item())
+
             if step % 10 == 0:
-                progress.progress((step+1)/num_steps)
+                progress.progress((step + 1) / num_steps)
+                chart_total.line_chart({"total_loss": history_total})
+                chart_split.line_chart({
+                    "content_loss": history_content,
+                    "style_loss": history_style
+                })
 
         final_tensor = generated.detach()
         output_pil = deprocess_vgg(final_tensor)
