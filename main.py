@@ -118,8 +118,8 @@ if content_file and style_file:
                 generated.clamp_(-2.5, 2.8)
 
             history_total.append(total.item())
-            history_content.append(c_loss.item())
-            history_style.append(s_loss.item())
+            history_content.append((content_weight * c_loss).item())
+            history_style.append((style_weight * s_loss).item())
 
             if step % 10 == 0:
                 progress.progress((step + 1) / num_steps)
@@ -133,7 +133,7 @@ if content_file and style_file:
         output_pil = deprocess_vgg(final_tensor)
 
         with col3:
-            st.image(output_pil, caption=f"Stylized {num_steps} steps", use_column_width=True)
+            st.image(output_pil, caption=f"Stylized {num_steps} steps", use_container_width=True)
             st.line_chart(history)
 
         # Save

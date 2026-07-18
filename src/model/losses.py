@@ -31,7 +31,7 @@ def gram_matrix(feature_map):
     # Dividing by the total number of elements (C * H * W) brings all layers to a 
     # relatively similar numerical scale, preventing early layers from dominating 
     # the style loss completely. This is the classic Gatys et al. (2015) approach.
-    normalization_factor = C * H * W
+    normalization_factor =  H * W
     gram = gram / normalization_factor
     
     return gram
