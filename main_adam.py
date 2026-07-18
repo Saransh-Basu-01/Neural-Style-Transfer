@@ -38,13 +38,13 @@ with col1:
     content_file = st.file_uploader("Content Image", type=["jpg", "png", "jpeg"])
     if content_file:
         content_pil = Image.open(content_file).convert("RGB")
-        st.image(content_pil, caption="Content", use_column_width=True)
+        st.image(content_pil, caption="Content", use_container_width=True)
 
 with col2:
     style_file = st.file_uploader("Style Image", type=["jpg", "png", "jpeg"])
     if style_file:
         style_pil = Image.open(style_file).convert("RGB")
-        st.image(style_pil, caption="Style", use_column_width=True)
+        st.image(style_pil, caption="Style", use_container_width=True)
 
 with col3:
     st.write("Output will appear here")
