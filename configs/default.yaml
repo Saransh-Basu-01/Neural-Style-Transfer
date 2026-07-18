@@ -1,0 +1,17 @@
+device: "cuda" # or cpu, engine will fallback
+paths:
+  content: "data/content/content.jpg"
+  style: "data/style/style.jpg"
+  output: "data/output/stylized.jpg"
+
+image:
+  max_size: 512
+  content_layer: "conv4_2"
+  style_layers: ["conv1_1", "conv2_1", "conv3_1", "conv4_1", "conv5_1"]
+
+training:
+  content_weight: 1.0
+  style_weight: 1e6
+  num_steps: 300
+  lr: 0.02
+  log_interval: 50
