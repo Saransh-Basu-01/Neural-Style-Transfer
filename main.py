@@ -3,7 +3,7 @@ import streamlit as st
 import torch
 from PIL import Image
 import os
-
+import datetime
 # Make src importable
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
@@ -118,8 +118,11 @@ if content_file and style_file:
             st.line_chart(history)
 
         # Save
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        out_name = f"stylized_{timestamp}.jpg"
+        out_path = os.path.join("data/output", out_name)
         os.makedirs("data/output", exist_ok=True)
-        output_pil.save("data/output/stylized.jpg")
-        st.success("Saved to data/output/stylized.jpg")
+        output_pil.save(out_path)
+        st.success(f"Saved to {out_path}")
 else:
     st.warning("Upload both content and style images")
