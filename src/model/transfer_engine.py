@@ -89,31 +89,40 @@ class StyleTransferEngine:
             for layer in self.style_layers:
                 self.style_targets[layer] = gram_matrix(style_features[layer]).clone().detach()
 
-    def run(self, content_tensor,num_steps=300, lr=0.02):
-        if self.content_target is None:
+    def run(self, content_tensor, num_steps=200, lr=0.8):
+        if self.content_target is None or self.style_targets is None:
             raise ValueError("Call prepare_targets() first")
-        
+
         content_tensor = content_tensor.to(self.device)
         generated = content_tensor.clone().detach().requires_grad_(True)
-        optimizer = optim.Adam([generated], lr=lr)
+
+        optimizer = optim.LBFGS([generated], lr=lr, max_iter=20, line_search_fn='strong_wolfe')
         loss_history = []
+
         for step in range(num_steps):
-            optimizer.zero_grad()
-            
-            features = self.extractor.extract_features(generated)
-            
-            content_loss_val = content_loss(self.content_target, features[self.content_layer])
-            style_loss_val = style_loss(self.style_targets, features)
-            
-            total_loss = (self.content_weight * content_loss_val + 
-                         self.style_weight * style_loss_val)
-            loss_history.append(total_loss.item())
-            total_loss.backward()
-            optimizer.step()
-            
+            def closure():
+                optimizer.zero_grad()
+                features = self.extractor.extract_features(generated)
+
+                content_loss_val = content_loss(self.content_target, features[self.content_layer])
+                style_loss_val = style_loss(self.style_targets, features)
+
+                total_loss = (self.content_weight * content_loss_val +
+                            self.style_weight * style_loss_val)
+
+                total_loss.backward()
+                return total_loss
+
+            loss = optimizer.step(closure)
+
             with torch.no_grad():
                 generated.clamp_(-2.5, 2.8)
-        
+
+            loss_history.append(loss.item())
+
+            if (step + 1) % 10 == 0:
+                print(f"Step {step+1}/{num_steps} loss {loss.item():.2f}")
+
         return generated.detach(), loss_history
 
-    
+        
